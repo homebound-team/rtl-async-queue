@@ -7,12 +7,17 @@ export type AllowAsyncOpts = { allowAsync?: boolean };
 // Guess about whether we're running in tests or production
 const inTests = "beforeEach" in global;
 
-/** A utility class for putting a promise that is explicitly resolved into the async queue. */
+/** A utility creating an async-queue-aware promise that is explicitly resolved. */
 export class Deferred {
   resolve: () => void;
-  promise: Promise<unknown>;
-  constructor() {
-    this.promise = new Promise((resolve) => (this.resolve = () => resolve(undefined)));
+
+  constructor(description: string) {
+    addToAsyncQueue(
+      description,
+      new Promise((resolve) => {
+        this.resolve = () => resolve(undefined);
+      }),
+    );
   }
 }
 
@@ -86,4 +91,17 @@ export function checkUnexpectedAsync(opts: AllowAsyncOpts = {}): void {
       throw unexpectedAsync;
     }
   }
+}
+
+/**
+ * Provides a `setTimeout` that is automatically integrated with the async queue.
+ *
+ * This is safe to use in production code w/o worrying to mock it out for tests.
+ */
+export function setTimeout(callback: () => void, ms?: number) {
+  const deferred = new Deferred("setTimeout");
+  return global.setTimeout(() => {
+    callback();
+    deferred.resolve();
+  }, ms);
 }
