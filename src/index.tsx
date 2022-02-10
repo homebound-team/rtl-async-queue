@@ -41,6 +41,7 @@ export function isAsyncQueueEmpty(): boolean {
 export function drainAsyncQueue(): Promise<any>[] {
   const copy = [...waitQueue];
   waitQueue = [];
+  unexpectedAsync = undefined;
   return copy;
 }
 
