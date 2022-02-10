@@ -31,6 +31,10 @@ export function addToAsyncQueue(description: string, promise: Promise<any>): voi
     );
   }
   waitQueue.push(promise);
+  promise.then(() => {
+    // Proactively clear the queue, in case this is production and tests aren't calling `drainAsyncQueue` regularly.
+    waitQueue = waitQueue.filter((p) => p !== promise);
+  });
 }
 
 /** Returns whether we have pending async operations. */
